@@ -13,3 +13,74 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+// Table user
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  carts     Cart[]
+
+  @@map("users")
+}
+
+// Table product
+model Product {
+  id          String     @id @default(cuid())
+  name        String
+  description String?    @db.Text
+  price       Decimal    @db.Decimal(10, 2)
+  stock       Int        @default(0)
+  category    String
+  imageUrl    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  cartItems   CartItem[]
+
+  @@map("products")
+}
+
+// Table cart
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String
+  status    CartStatus @default(ACTIVE)
+  total     Decimal    @db.Decimal(10, 2) @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+// Table cart item
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int      @default(1)
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum CartStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
